@@ -19,7 +19,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .tabs{display:flex;padding:0 16px;gap:8px;margin-top:8px}
 .tab{flex:1;padding:12px;background:#1e293b;border:none;color:#94a3b8;border-radius:12px;font-size:0.9rem;cursor:pointer}
 .tab.active{background:linear-gradient(135deg,#f59e0b,#d97706);color:#0f172a;font-weight:600}
-.conversations{padding:16px;display:flex;flex-direction:column;gap:12px}
+.chat_history{padding:16px;display:flex;flex-direction:column;gap:12px}
 .conv-card{background:#1e293b;border-radius:16px;padding:16px;border:1px solid #334155;cursor:pointer}
 .conv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .conv-phone{font-weight:600;color:#f8fafc}
@@ -51,21 +51,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <div class="stat"><div class="stat-value" id="stat-today">-</div><div class="stat-label">Aujourd'hui</div></div>
 </div>
 <div class="tabs"><button class="tab active" onclick="filterConvs('all')">Tous</button><button class="tab" onclick="filterConvs('today')">Aujourd'hui</button></div>
-<div id="conversations" class="conversations"><div class="loader"></div></div>
+<div id="chat_history" class="chat_history"><div class="loader"></div></div>
 <div id="modal" class="modal"><div class="modal-content"><div class="modal-header"><h2 id="modal-title">Conversation</h2><button class="close-btn" onclick="closeModal()">×</button></div><div id="modal-messages" class="messages"></div></div></div>
 <button class="refresh-btn" onclick="loadData()">🔄</button>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const{createClient}=supabase;const db=createClient('https://illosocrmbioyefvqjae.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsbG9zb2NybWJpb3llZnZxamFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NTc1MzIsImV4cCI6MjA1MzEzMzUzMn0.Tt3Fd7imyaPKyOBNpLDiHgWh5xY7NPSkvDgaWr3c0Yk');let allConvs=[];
-async function loadData(){document.getElementById('conversations').innerHTML='<div class="loader"></div>';const{data}=await db.from('conversations').select('*').order('updated_at',{ascending:false});allConvs=data||[];const totalMsgs=allConvs.reduce((a,c)=>a+(c.messages?.length||0),0);const today=allConvs.filter(c=>new Date(c.updated_at).toDateString()===new Date().toDateString()).length;document.getElementById('stat-clients').textContent=allConvs.length;document.getElementById('stat-messages').textContent=totalMsgs;document.getElementById('stat-today').textContent=today;renderConvs(allConvs);}
-function renderConvs(convs){const container=document.getElementById('conversations');if(convs.length===0){container.innerHTML='<div style="text-align:center;padding:60px;color:#64748b">📭 Aucune conversation</div>';return;}container.innerHTML=convs.map(c=>'<div class="conv-card" onclick="openConv(\''+c.phone+'\')"><div class="conv-header"><span class="conv-phone">'+formatPhone(c.phone)+'</span><span class="conv-time">'+formatTime(c.updated_at)+'</span></div><div class="conv-preview">'+getLastMsg(c)+'</div><div class="conv-meta"><span class="conv-tag">💬 '+(c.messages?.length||0)+'</span></div></div>').join('');}
+async function loadData(){document.getElementById('chat_history').innerHTML='<div class="loader"></div>';const{data}=await db.from('chat_history').select('*').order('updated_at',{ascending:false});allConvs=data||[];const totalMsgs=allConvs.reduce((a,c)=>a+(c.messages?.length||0),0);const today=allConvs.filter(c=>new Date(c.updated_at).toDateString()===new Date().toDateString()).length;document.getElementById('stat-clients').textContent=allConvs.length;document.getElementById('stat-messages').textContent=totalMsgs;document.getElementById('stat-today').textContent=today;renderConvs(allConvs);}
+function renderConvs(convs){const container=document.getElementById('chat_history');if(convs.length===0){container.innerHTML='<div style="text-align:center;padding:60px;color:#64748b">📭 Aucune conversation</div>';return;}container.innerHTML=convs.map(c=>'<div class="conv-card" onclick="openConv(\''+c.phone+'\')"><div class="conv-header"><span class="conv-phone">'+formatPhone(c.phone)+'</span><span class="conv-time">'+formatTime(c.updated_at)+'</span></div><div class="conv-preview">'+getLastMsg(c)+'</div><div class="conv-meta"><span class="conv-tag">💬 '+(c.messages?.length||0)+'</span></div></div>').join('');}
 function formatPhone(p){return p?.replace('whatsapp:','').replace(/(\+33)(\d)(\d{2})(\d{2})(\d{2})(\d{2})/,'$1 $2 $3 $4 $5 $6')||'Inconnu';}
 function formatTime(t){const d=new Date(t);const now=new Date();if(d.toDateString()===now.toDateString())return d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});}
 function getLastMsg(c){return c.messages?.[c.messages.length-1]?.content?.substring(0,50)||'Pas de message';}
 function filterConvs(type){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');if(type==='today'){renderConvs(allConvs.filter(c=>new Date(c.updated_at).toDateString()===new Date().toDateString()));}else{renderConvs(allConvs);}}
 function openConv(phone){const conv=allConvs.find(c=>c.phone===phone);if(!conv)return;document.getElementById('modal-title').textContent=formatPhone(phone);document.getElementById('modal-messages').innerHTML=(conv.messages||[]).map(m=>'<div class="msg '+m.role+'">'+m.content+'<div class="msg-label">'+(m.role==='user'?'Client':'Selezione IA')+'</div></div>').join('');document.getElementById('modal').classList.add('active');}
 function closeModal(){document.getElementById('modal').classList.remove('active');}
-loadData();db.channel('changes').on('postgres_changes',{event:'*',schema:'public',table:'conversations'},()=>loadData()).subscribe();
+loadData();db.channel('changes').on('postgres_changes',{event:'*',schema:'public',table:'chat_history'},()=>loadData()).subscribe();
 </script>
 </body>
 </html>

@@ -28,8 +28,8 @@ const d=await r.json();
 return d.success?(d.data?.markdown||"").substring(0,2000):"";
 }catch(e){return"";}
 }
-async function getHist(p){const{data}=await supabase.from("conversations").select("messages").eq("phone",p).single();return data?.messages||[];}
-async function saveHist(p,m){await supabase.from("conversations").upsert({phone:p,messages:m.slice(-20),updated_at:new Date().toISOString()},{onConflict:"phone"});}
+async function getHist(p){const{data}=await supabase.from("chat_history").select("messages").eq("phone",p).single();return data?.messages||[];}
+async function saveHist(p,m){await supabase.from("chat_history").upsert({phone:p,messages:m.slice(-20),updated_at:new Date().toISOString()},{onConflict:"phone"});}
 async function smartSearch(brand,product){
 let allData="PRODUITS TROUVES:\n";
 const searches=await Promise.all(SITES.slice(0,5).map(s=>searchGoogle(brand+" "+product+" site:"+s+" EUR")));
